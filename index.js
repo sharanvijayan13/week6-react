@@ -80,10 +80,20 @@ const validatePostData = (req, res, next) => {
     });
   }
 
-  if (typeof user_id !== "string" || user_id.trim().length === 0) {
+  // Validate user_id - can be string or number
+  if (typeof user_id !== "string" && typeof user_id !== "number") {
     return res.status(400).json({
       error: "Invalid user_id",
-      message: "User ID must be a non-empty string",
+      message: "User ID must be a string or number",
+    });
+  }
+
+  // Convert to string for consistency and check if it's not empty
+  const userIdStr = String(user_id).trim();
+  if (userIdStr.length === 0) {
+    return res.status(400).json({
+      error: "Invalid user_id",
+      message: "User ID cannot be empty",
     });
   }
 
@@ -135,7 +145,7 @@ app.get("/api/posts", async (req, res) => {
     const { data, error } = await supabase
       .from("posts")
       .select("id, title, body, user_id")
-      .order("created_at", { ascending: false }); // Order by creation date (newest first)
+      .order("id", { ascending: false }); // Order by ID (newest first)
 
     // Handle database errors
     if (error) {
@@ -146,12 +156,8 @@ app.get("/api/posts", async (req, res) => {
       });
     }
 
-    // Return successful response with posts data
-    res.status(200).json({
-      success: true,
-      data: data || [],
-      count: data?.length || 0,
-    });
+    // Return posts data directly (React expects array)
+    res.status(200).json(data || []);
   } catch (err) {
     // Handle unexpected errors
     console.error("Unexpected error in GET /api/posts:", err);
@@ -199,10 +205,10 @@ app.post("/api/posts", validatePostData, async (req, res) => {
         {
           title: title.trim(),
           body: body.trim(),
-          user_id: user_id.trim(),
+          user_id: String(user_id).trim(), // Ensure user_id is string
         },
       ])
-      .select("id, title, body, user_id, created_at");
+      .select("id, title, body, user_id");
 
     // Handle database errors
     if (error) {
@@ -221,12 +227,8 @@ app.post("/api/posts", validatePostData, async (req, res) => {
       });
     }
 
-    // Return successful response with created post data
-    res.status(201).json({
-      success: true,
-      data: data[0],
-      message: "Post created successfully",
-    });
+    // Return created post data directly
+    res.status(201).json(data[0]);
   } catch (err) {
     // Handle unexpected errors
     console.error("Unexpected error in POST /api/posts:", err);
