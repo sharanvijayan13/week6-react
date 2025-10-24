@@ -277,16 +277,15 @@ app.use((req, res) => {
  */
 const PORT = process.env.PORT || 5000;
 
-/**
- * Start the Express server
- * Listens on the specified port and logs server status
- */
-app.listen(PORT, () => {
-  console.log(`🚀 Server running on port ${PORT}`);
-  console.log(`📊 Health check: http://localhost:${PORT}/api/health`);
-  console.log(`📝 Posts API: http://localhost:${PORT}/api/posts`);
-  console.log(`🌍 Environment: ${process.env.NODE_ENV || "development"}`);
-});
+let server;
+if (process.env.NODE_ENV !== "test") {
+  server = app.listen(PORT, () => {
+    console.log(`🚀 Server running on port ${PORT}`);
+    console.log(`📊 Health check: http://localhost:${PORT}/api/health`);
+    console.log(`📝 Posts API: http://localhost:${PORT}/api/posts`);
+    console.log(`🌍 Environment: ${process.env.NODE_ENV || "development"}`);
+  });
+}
 
 // Graceful shutdown handling
 process.on("SIGTERM", () => {
@@ -298,3 +297,5 @@ process.on("SIGINT", () => {
   console.log("SIGINT received, shutting down gracefully");
   process.exit(0);
 });
+
+export { app };
